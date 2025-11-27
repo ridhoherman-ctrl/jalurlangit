@@ -49,6 +49,22 @@ export interface UserSettings {
 
 export type TimeZone = 'WIB' | 'WITA' | 'WIT';
 
+export interface UserLevel {
+  title: string;
+  minPoints: number;
+  icon: string;
+  color: string;
+  description: string;
+}
+
+export const USER_LEVELS: UserLevel[] = [
+  { title: 'Hamba Allah', minPoints: 0, icon: '🌱', color: 'text-slate-500', description: 'Awal perjalanan menuju ridho-Nya.' },
+  { title: 'Pejuang Subuh', minPoints: 500, icon: '🌅', color: 'text-orange-500', description: 'Mulai konsisten bangun jiwa.' },
+  { title: 'Ahli Ibadah', minPoints: 2000, icon: '🕌', color: 'text-emerald-500', description: 'Ibadah menjadi kebutuhan, bukan beban.' },
+  { title: 'Istiqomah', minPoints: 5000, icon: '⭐', color: 'text-blue-500', description: 'Konsistensi yang mengakar kuat.' },
+  { title: 'Jalur Langit', minPoints: 10000, icon: '🌌', color: 'text-purple-500', description: 'Mengetuk pintu langit setiap saat.' },
+];
+
 export const INITIAL_IBADAH: IbadahItem[] = [
   { id: '1', name: 'Dzikir Pagi', category: 'Dzikir dan Doa', description: 'Dzikir Setelah Shalat Subuh', target: '1x', points: 5 },
   { id: '2', name: 'Dzikir Petang', category: 'Dzikir dan Doa', description: 'Dzikir Setelah Shalat Ashar', target: '1x', points: 5 },

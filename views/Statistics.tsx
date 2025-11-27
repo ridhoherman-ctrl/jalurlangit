@@ -1,18 +1,21 @@
 
 import React, { useEffect, useState } from 'react';
-import { DailyLog, Category } from '../types';
+import { DailyLog, Category, UserLevel } from '../types';
 import * as Storage from '../services/storageService';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { compareDesc } from 'date-fns';
+import { Award } from 'lucide-react';
 
 export const Statistics: React.FC = () => {
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [ibadahList] = useState(Storage.getIbadahList());
+  const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
 
   useEffect(() => {
     const allLogs = Storage.getAllLogs();
     const sortedLogs = Object.values(allLogs).sort((a, b) => compareDesc(new Date(a.date), new Date(b.date)));
     setLogs(sortedLogs);
+    setUserLevel(Storage.getUserLevel());
   }, []);
 
   // Aggregate Data
@@ -36,6 +39,24 @@ export const Statistics: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-8 pb-24">
       <h2 className="text-2xl font-serif font-bold text-emerald-900">Statistik Ibadah</h2>
+
+      {/* User Level Badge */}
+      {userLevel && (
+        <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 rounded-2xl p-6 text-white shadow-lg flex items-center space-x-6">
+            <div className="bg-white/10 p-4 rounded-full backdrop-blur-sm">
+                <span className="text-4xl">{userLevel.icon}</span>
+            </div>
+            <div>
+                <p className="text-emerald-200 text-xs font-bold uppercase tracking-widest mb-1">Level Pencapaian</p>
+                <h3 className="text-2xl font-serif font-bold text-amber-400">{userLevel.title}</h3>
+                <p className="text-sm opacity-90 mt-1">{userLevel.description}</p>
+            </div>
+            <div className="ml-auto hidden md:block text-right">
+                <p className="text-3xl font-bold">{totalPoints}</p>
+                <p className="text-xs text-emerald-300 uppercase">Total Poin</p>
+            </div>
+        </div>
+      )}
 
       {/* Big Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

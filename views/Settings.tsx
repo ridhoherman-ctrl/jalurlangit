@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { IbadahItem, ExclusionPeriod, Category, ExclusionReason } from '../types';
 import * as Storage from '../services/storageService';
-import { Trash2, Plus, AlertCircle } from 'lucide-react';
+import { Trash2, Plus, AlertCircle, Download, Upload, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const Settings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'ibadah' | 'halangan'>('ibadah');
+  const [activeTab, setActiveTab] = useState<'ibadah' | 'halangan' | 'data'>('ibadah');
   
   // Ibadah Form State
   const [ibadahList, setIbadahList] = useState<IbadahItem[]>([]);
@@ -15,6 +15,9 @@ export const Settings: React.FC = () => {
   // Exclusion Form State
   const [exclusions, setExclusions] = useState<ExclusionPeriod[]>([]);
   const [newExclusion, setNewExclusion] = useState<Partial<ExclusionPeriod>>({ reason: 'Haid' });
+
+  // Data State
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setIbadahList(Storage.getIbadahList());
@@ -73,28 +76,74 @@ export const Settings: React.FC = () => {
     Storage.saveExclusions(updated);
   };
 
+  const handleExport = () => {
+    const json = Storage.exportData();
+    const blob = new Blob([json], { type: 'application/json' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = `JalurLangit_Backup_${format(new Date(), 'yyyyMMdd_HHmm')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportTrigger = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const json = event.target?.result as string;
+      if (Storage.importData(json)) {
+        alert('Data berhasil dipulihkan!');
+        window.location.reload();
+      } else {
+        alert('Gagal memproses file backup.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleResetData = () => {
+    if (confirm('PERINGATAN: Ini akan menghapus SEMUA data ibadah dan kembali ke pengaturan awal. Anda tidak bisa membatalkannya. Lanjutkan?')) {
+        localStorage.clear();
+        window.location.reload();
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
       <h2 className="text-2xl font-serif font-bold text-emerald-900 mb-6">Kelola Aplikasi</h2>
 
       {/* Tabs */}
-      <div className="flex space-x-2 mb-6 border-b border-slate-200">
+      <div className="flex space-x-2 mb-6 border-b border-slate-200 overflow-x-auto">
         <button 
           onClick={() => setActiveTab('ibadah')}
-          className={`px-4 py-2 font-medium text-sm rounded-t-lg ${activeTab === 'ibadah' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium text-sm rounded-t-lg whitespace-nowrap ${activeTab === 'ibadah' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'}`}
         >
           Kelola Jenis Ibadah
         </button>
         <button 
           onClick={() => setActiveTab('halangan')}
-          className={`px-4 py-2 font-medium text-sm rounded-t-lg ${activeTab === 'halangan' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`px-4 py-2 font-medium text-sm rounded-t-lg whitespace-nowrap ${activeTab === 'halangan' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'}`}
         >
           Kelola Halangan
         </button>
+        <button 
+          onClick={() => setActiveTab('data')}
+          className={`px-4 py-2 font-medium text-sm rounded-t-lg whitespace-nowrap ${activeTab === 'data' ? 'bg-emerald-50 text-emerald-700 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          Backup & Data
+        </button>
       </div>
 
-      {activeTab === 'ibadah' ? (
-        <div className="space-y-8">
+      {activeTab === 'ibadah' && (
+        <div className="space-y-8 animate-in fade-in">
           {/* Add Form */}
           <form onSubmit={handleAddIbadah} className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 grid grid-cols-1 md:grid-cols-2 gap-4">
              <div className="md:col-span-2">
@@ -159,8 +208,10 @@ export const Settings: React.FC = () => {
             </table>
           </div>
         </div>
-      ) : (
-        <div className="space-y-8">
+      )}
+
+      {activeTab === 'halangan' && (
+        <div className="space-y-8 animate-in fade-in">
           <div className="bg-orange-50 p-4 rounded-xl flex gap-3 text-orange-800 text-sm">
             <AlertCircle className="flex-shrink-0" />
             <p>Catat periode dimana Anda tidak dapat melaksanakan ibadah (seperti Haid/Nifas/Sakit). Periode ini akan ditandai di kalender statistik.</p>
@@ -241,6 +292,57 @@ export const Settings: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'data' && (
+        <div className="space-y-6 animate-in fade-in">
+            <div className="bg-blue-50 p-4 rounded-xl flex gap-3 text-blue-800 text-sm border border-blue-100">
+                <AlertCircle className="flex-shrink-0" />
+                <p>
+                    Data Anda tersimpan di browser (LocalStorage). Jika Anda membersihkan cache atau ganti perangkat, data akan hilang. 
+                    <strong> Sangat disarankan untuk rutin melakukan Backup (Download Data).</strong>
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 mb-4">
+                        <Download size={24} />
+                    </div>
+                    <h3 className="font-bold text-emerald-900 text-lg mb-2">Backup Data</h3>
+                    <p className="text-slate-500 text-sm mb-6">Unduh semua data ibadah, pengaturan, dan riwayat Anda ke dalam file JSON.</p>
+                    <button onClick={handleExport} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors">
+                        Download Backup
+                    </button>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
+                    <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 mb-4">
+                        <Upload size={24} />
+                    </div>
+                    <h3 className="font-bold text-emerald-900 text-lg mb-2">Restore Data</h3>
+                    <p className="text-slate-500 text-sm mb-6">Pulihkan data dari file backup yang sebelumnya Anda unduh.</p>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept=".json"
+                        onChange={handleImportFile}
+                    />
+                    <button onClick={handleImportTrigger} className="w-full border-2 border-amber-500 text-amber-700 py-3 rounded-xl font-bold hover:bg-amber-50 transition-colors">
+                        Upload File Backup
+                    </button>
+                </div>
+            </div>
+
+             <div className="mt-8 pt-8 border-t border-slate-200">
+                <h3 className="font-bold text-red-600 mb-4">Zona Bahaya</h3>
+                <button onClick={handleResetData} className="flex items-center space-x-2 text-red-500 hover:text-red-700 px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
+                    <RefreshCw size={16} />
+                    <span>Reset Total Aplikasi (Hapus Semua Data)</span>
+                </button>
+             </div>
         </div>
       )}
 

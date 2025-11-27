@@ -5,13 +5,20 @@ import { IbadahItem, DailyLog, Category } from '../types';
 import * as Storage from '../services/storageService';
 import { StatsSummary } from '../components/StatsSummary';
 import { ReflectionBox } from '../components/ReflectionBox';
-import { Check, CalendarOff, BookOpen, Save } from 'lucide-react';
+import { DigitalTasbih } from '../components/DigitalTasbih';
+import { Confetti } from '../components/Confetti';
+import { Check, CalendarOff, BookOpen, Save, Fingerprint } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [ibadahList, setIbadahList] = useState<IbadahItem[]>([]);
   const [log, setLog] = useState<DailyLog>(Storage.getDailyLog(format(new Date(), 'yyyy-MM-dd')));
   const [history, setHistory] = useState<DailyLog[]>([]);
   const [exclusion, setExclusion] = useState(Storage.isDateExcluded(new Date()));
+  const [showConfetti, setShowConfetti] = useState(false);
+  
+  // Tasbih State
+  const [tasbihOpen, setTasbihOpen] = useState(false);
+  const [tasbihConfig, setTasbihConfig] = useState<{title: string, target?: number}>({title: 'Tasbih'});
 
   useEffect(() => {
     setIbadahList(Storage.getIbadahList());
@@ -26,8 +33,20 @@ export const Dashboard: React.FC = () => {
     setHistory(hist);
   }, []);
 
+  const maxPoints = ibadahList.reduce((acc, curr) => acc + curr.points, 0);
+  const currentPoints = log.totalPoints;
+
+  // Trigger Confetti on 100%
+  useEffect(() => {
+    if (maxPoints > 0 && currentPoints === maxPoints) {
+        setShowConfetti(true);
+        // Auto hide handled by component, but we reset state for re-trigger
+        setTimeout(() => setShowConfetti(false), 6000);
+    }
+  }, [currentPoints, maxPoints]);
+
   const handleToggle = (item: IbadahItem) => {
-    if (exclusion) return; // Prevent toggle if excluded
+    if (exclusion) return;
 
     const newCompleted = log.completedIds.includes(item.id)
       ? log.completedIds.filter(id => id !== item.id)
@@ -47,15 +66,6 @@ export const Dashboard: React.FC = () => {
 
     setLog(updatedLog);
     Storage.saveDailyLog(updatedLog);
-
-    // Notification trigger (Simple)
-    if (!log.completedIds.includes(item.id)) {
-       if (Notification.permission === "granted") {
-         new Notification("Alhamdulillah!", { body: `${item.name} tercatat.` });
-       } else if (Notification.permission !== "denied") {
-         Notification.requestPermission();
-       }
-    }
   };
 
   const handleQuranUpdate = (field: 'surah' | 'ayat', value: string) => {
@@ -74,6 +84,27 @@ export const Dashboard: React.FC = () => {
     Storage.saveDailyLog(updatedLog);
   };
 
+  const openTasbih = (e: React.MouseEvent, item: IbadahItem) => {
+    e.stopPropagation();
+    // Parse target number from string (e.g. "100x" -> 100)
+    const targetMatch = item.target.match(/\d+/);
+    const target = targetMatch ? parseInt(targetMatch[0]) : undefined;
+    
+    setTasbihConfig({
+        title: item.name,
+        target: target
+    });
+    setTasbihOpen(true);
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 11) return "Selamat Pagi";
+    if (hour < 15) return "Selamat Siang";
+    if (hour < 18) return "Selamat Sore";
+    return "Selamat Malam";
+  };
+
   const categories: Category[] = [
     'Dzikir dan Doa',
     'Puasa Sunnah',
@@ -83,20 +114,21 @@ export const Dashboard: React.FC = () => {
     'Tilawah Al Qur’an'
   ];
 
-  const maxPoints = ibadahList.reduce((acc, curr) => acc + curr.points, 0);
-
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-8 pb-24">
       
-      {/* Date Header with Pattern */}
-      <div className="relative overflow-hidden rounded-2xl bg-emerald-900 text-white p-6 md:p-8 shadow-xl">
+      {showConfetti && <Confetti />}
+      <DigitalTasbih isOpen={tasbihOpen} onClose={() => setTasbihOpen(false)} title={tasbihConfig.title} target={tasbihConfig.target} />
+
+      {/* Dynamic Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-900 to-emerald-800 text-white p-6 md:p-8 shadow-xl">
          <div className="absolute inset-0 opacity-10" 
               style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.8) 1px, transparent 0)', backgroundSize: '24px 24px' }}>
          </div>
          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
                <h2 className="text-2xl md:text-3xl font-serif font-bold text-amber-300">
-                Checklist Ibadah
+                {getGreeting()}
               </h2>
               <p className="text-emerald-100 mt-1 opacity-90">
                 "Barangsiapa yang menempuh jalan untuk menuntut ilmu, Allah akan mudahkan baginya jalan menuju surga."
@@ -144,6 +176,7 @@ export const Dashboard: React.FC = () => {
                   {items.map(item => {
                     const isChecked = log.completedIds.includes(item.id);
                     const isQuran = item.category === 'Tilawah Al Qur’an';
+                    const isDzikir = item.category === 'Dzikir dan Doa';
                     
                     return (
                       <div key={item.id} className={`transition-all duration-500 ${isChecked ? 'bg-slate-50/50' : 'bg-white'}`}>
@@ -172,15 +205,26 @@ export const Dashboard: React.FC = () => {
                                 <span className={`transition-colors duration-300 ${isChecked ? 'text-slate-400' : 'text-emerald-950'}`}>
                                   {item.name}
                                 </span>
-                                {/* Animated Strikethrough Line */}
                                 <span className={`absolute left-0 top-1/2 -translate-y-1/2 h-px bg-slate-400 transition-all duration-500 ease-out ${isChecked ? 'w-full' : 'w-0'}`}></span>
                               </h4>
                               
-                              <span className={`text-xs font-bold px-2 py-1 rounded-lg transition-colors ${
-                                isChecked ? 'bg-slate-100 text-slate-400' : 'bg-amber-100 text-amber-700'
-                              }`}>
-                                +{item.points} Poin
-                              </span>
+                              <div className="flex items-center space-x-2">
+                                {/* Digital Tasbih Trigger */}
+                                {isDzikir && !isChecked && (
+                                    <button 
+                                        onClick={(e) => openTasbih(e, item)}
+                                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors"
+                                        title="Buka Tasbih Digital"
+                                    >
+                                        <Fingerprint size={18} />
+                                    </button>
+                                )}
+                                <span className={`text-xs font-bold px-2 py-1 rounded-lg transition-colors ${
+                                    isChecked ? 'bg-slate-100 text-slate-400' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                    +{item.points} Poin
+                                </span>
+                              </div>
                             </div>
                             <p className={`text-sm mt-1 transition-colors duration-300 ${isChecked ? 'text-slate-400' : 'text-slate-500'}`}>
                               {item.description}

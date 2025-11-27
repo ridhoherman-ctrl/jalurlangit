@@ -1,5 +1,5 @@
 
-import { IbadahItem, DailyLog, ExclusionPeriod, UserSettings, INITIAL_IBADAH } from '../types';
+import { IbadahItem, DailyLog, ExclusionPeriod, UserSettings, INITIAL_IBADAH, USER_LEVELS, UserLevel } from '../types';
 import { format, isWithinInterval } from 'date-fns';
 
 const KEYS = {
@@ -81,15 +81,11 @@ export const calculateStreak = (today: string): number => {
   let streak = 0;
   let currentDate = new Date(today);
   
-  // Check today first. If no points today, check yesterday for streak continuity
-  // But commonly streak includes today if active, or yesterday back
-  
   const todayLog = logs[today];
   if (todayLog && todayLog.totalPoints > 0) {
     streak++;
   }
 
-  // Loop backwards
   for (let i = 1; i < 365; i++) {
     const d = new Date(currentDate);
     d.setDate(d.getDate() - i);
@@ -102,4 +98,49 @@ export const calculateStreak = (today: string): number => {
     }
   }
   return streak;
+};
+
+export const getUserLevel = (): UserLevel => {
+  const logs = getAllLogs();
+  const totalPoints = Object.values(logs).reduce((sum, log) => sum + log.totalPoints, 0);
+  
+  // Find the highest level achieved
+  return USER_LEVELS.slice().reverse().find(lvl => totalPoints >= lvl.minPoints) || USER_LEVELS[0];
+};
+
+export const getTotalPoints = (): number => {
+  const logs = getAllLogs();
+  return Object.values(logs).reduce((sum, log) => sum + log.totalPoints, 0);
+};
+
+// --- DATA BACKUP & RESTORE ---
+
+export const exportData = (): string => {
+  const data = {
+    settings: getUserSettings(),
+    ibadahList: getIbadahList(),
+    logs: getAllLogs(),
+    exclusions: getExclusions(),
+    version: '1.0',
+    exportDate: new Date().toISOString()
+  };
+  return JSON.stringify(data, null, 2);
+};
+
+export const importData = (jsonString: string): boolean => {
+  try {
+    const data = JSON.parse(jsonString);
+    if (!data.logs || !data.ibadahList) throw new Error("Invalid Format");
+    
+    // Validate simple structure
+    localStorage.setItem(KEYS.SETTINGS, JSON.stringify(data.settings));
+    localStorage.setItem(KEYS.IBADAH_LIST, JSON.stringify(data.ibadahList));
+    localStorage.setItem(KEYS.LOGS, JSON.stringify(data.logs));
+    localStorage.setItem(KEYS.EXCLUSIONS, JSON.stringify(data.exclusions));
+    
+    return true;
+  } catch (e) {
+    console.error("Import Failed", e);
+    return false;
+  }
 };
