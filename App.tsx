@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { LayoutDashboard, PieChart, Settings as SettingsIcon, Moon } from 'lucide-react';
@@ -6,11 +6,19 @@ import { LayoutDashboard, PieChart, Settings as SettingsIcon, Moon } from 'lucid
 import { Dashboard } from './views/Dashboard';
 import { Statistics } from './views/Statistics';
 import { Settings } from './views/Settings';
+import { Onboarding } from './views/Onboarding';
 import { Clock } from './components/Clock';
-import { getUserSettings } from './services/storageService';
+import { getUserSettings, hasUserSettings } from './services/storageService';
 
 const App: React.FC = () => {
+  const [isOnboarded, setIsOnboarded] = useState(hasUserSettings());
+  
+  // Re-fetch user on render to ensure name is up to date after onboarding
   const user = getUserSettings();
+
+  if (!isOnboarded) {
+    return <Onboarding onComplete={() => setIsOnboarded(true)} />;
+  }
 
   return (
     <HashRouter>

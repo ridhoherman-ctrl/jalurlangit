@@ -5,7 +5,7 @@ import { IbadahItem, DailyLog, Category } from '../types';
 import * as Storage from '../services/storageService';
 import { StatsSummary } from '../components/StatsSummary';
 import { ReflectionBox } from '../components/ReflectionBox';
-import { Check, CalendarOff, BookOpen } from 'lucide-react';
+import { Check, CalendarOff, BookOpen, Save } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [ibadahList, setIbadahList] = useState<IbadahItem[]>([]);
@@ -146,34 +146,43 @@ export const Dashboard: React.FC = () => {
                     const isQuran = item.category === 'Tilawah Al Qur’an';
                     
                     return (
-                      <div key={item.id} className={`transition-all duration-300 ${isChecked ? 'bg-slate-50/50' : 'bg-white'}`}>
+                      <div key={item.id} className={`transition-all duration-500 ${isChecked ? 'bg-slate-50/50' : 'bg-white'}`}>
                         <div 
                           onClick={() => handleToggle(item)}
-                          className={`p-5 flex items-start space-x-4 cursor-pointer hover:bg-slate-50 ${exclusion ? 'opacity-50 pointer-events-none' : ''}`}
+                          className={`p-5 flex items-start space-x-4 cursor-pointer hover:bg-slate-50 group select-none ${exclusion ? 'opacity-50 pointer-events-none' : ''}`}
                         >
-                          <div className={`flex-shrink-0 mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
-                            isChecked 
-                              ? 'bg-emerald-500 border-emerald-500 text-white scale-110 shadow-lg shadow-emerald-200' 
-                              : 'border-slate-300 text-transparent hover:border-emerald-400'
-                          }`}>
-                            <Check size={14} strokeWidth={4} />
+                          <div className={`
+                            flex-shrink-0 mt-1 w-6 h-6 rounded-lg border-2 flex items-center justify-center 
+                            transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] 
+                            group-active:scale-90
+                            ${isChecked 
+                              ? 'bg-emerald-500 border-emerald-500 text-white scale-100 shadow-lg shadow-emerald-200' 
+                              : 'border-slate-300 text-transparent hover:border-emerald-400 scale-100'
+                            }
+                          `}>
+                            <Check size={14} strokeWidth={4} className={`
+                              transition-all duration-300 ease-out 
+                              ${isChecked ? 'scale-100 opacity-100 rotate-0' : 'scale-0 opacity-0 -rotate-90'}
+                            `} />
                           </div>
-                          <div className="flex-1">
+                          
+                          <div className={`flex-1 transition-all duration-500 ${isChecked ? 'opacity-50 grayscale-[0.5]' : 'opacity-100'}`}>
                             <div className="flex justify-between items-start">
-                              <h4 className={`font-semibold text-lg transition-all duration-300 ${
-                                isChecked 
-                                  ? 'text-slate-400 line-through decoration-emerald-500/50 decoration-2' 
-                                  : 'text-emerald-950'
-                              }`}>
-                                {item.name}
+                              <h4 className="font-semibold text-lg relative inline-block">
+                                <span className={`transition-colors duration-300 ${isChecked ? 'text-slate-400' : 'text-emerald-950'}`}>
+                                  {item.name}
+                                </span>
+                                {/* Animated Strikethrough Line */}
+                                <span className={`absolute left-0 top-1/2 -translate-y-1/2 h-px bg-slate-400 transition-all duration-500 ease-out ${isChecked ? 'w-full' : 'w-0'}`}></span>
                               </h4>
+                              
                               <span className={`text-xs font-bold px-2 py-1 rounded-lg transition-colors ${
-                                isChecked ? 'bg-slate-200 text-slate-500' : 'bg-amber-100 text-amber-700'
+                                isChecked ? 'bg-slate-100 text-slate-400' : 'bg-amber-100 text-amber-700'
                               }`}>
                                 +{item.points} Poin
                               </span>
                             </div>
-                            <p className={`text-sm mt-1 transition-colors ${isChecked ? 'text-slate-300' : 'text-slate-500'}`}>
+                            <p className={`text-sm mt-1 transition-colors duration-300 ${isChecked ? 'text-slate-400' : 'text-slate-500'}`}>
                               {item.description}
                             </p>
                           </div>
@@ -181,31 +190,36 @@ export const Dashboard: React.FC = () => {
 
                         {/* Quran Specific Input */}
                         {isQuran && (
-                          <div className={`px-5 pb-5 ml-14 transition-all duration-500 overflow-hidden ${isChecked ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <div className={`px-5 pb-5 ml-14 transition-all duration-500 overflow-hidden ${isChecked ? 'max-h-56 opacity-100' : 'max-h-0 opacity-0'}`}>
                              <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 flex flex-col sm:flex-row gap-3 items-center">
-                                <div className="text-amber-600">
+                                <div className="text-amber-600 flex-shrink-0">
                                   <BookOpen size={20} />
                                 </div>
                                 <div className="flex-1 w-full sm:w-auto">
-                                  <label className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">Surat Terakhir</label>
+                                  <label className="text-[10px] uppercase font-bold text-amber-700 tracking-wider mb-1 block">Surat Terakhir</label>
                                   <input 
                                     type="text" 
-                                    placeholder="Contoh: Al-Baqarah"
+                                    placeholder="Nama Surat (misal: Al-Kahf)"
                                     value={log.quranLastRead?.surah || ''}
                                     onChange={(e) => handleQuranUpdate('surah', e.target.value)}
-                                    className="w-full bg-white border-none rounded-lg text-sm text-emerald-900 placeholder-amber-300 focus:ring-1 focus:ring-amber-400 py-1"
+                                    className="w-full bg-white border border-amber-200 rounded-lg text-sm text-emerald-900 placeholder-amber-300 focus:ring-2 focus:ring-amber-400 focus:border-transparent py-2 px-3 outline-none"
                                   />
                                 </div>
-                                <div className="w-full sm:w-24">
-                                  <label className="text-[10px] uppercase font-bold text-amber-700 tracking-wider">Ayat</label>
+                                <div className="w-full sm:w-32">
+                                  <label className="text-[10px] uppercase font-bold text-amber-700 tracking-wider mb-1 block">Ayat</label>
                                   <input 
                                     type="text" 
-                                    placeholder="10-15"
+                                    placeholder="Ayat (1-10)"
                                     value={log.quranLastRead?.ayat || ''}
                                     onChange={(e) => handleQuranUpdate('ayat', e.target.value)}
-                                    className="w-full bg-white border-none rounded-lg text-sm text-emerald-900 placeholder-amber-300 focus:ring-1 focus:ring-amber-400 py-1"
+                                    className="w-full bg-white border border-amber-200 rounded-lg text-sm text-emerald-900 placeholder-amber-300 focus:ring-2 focus:ring-amber-400 focus:border-transparent py-2 px-3 outline-none"
                                   />
                                 </div>
+                                {(log.quranLastRead?.surah || log.quranLastRead?.ayat) && (
+                                  <div className="flex-shrink-0 text-amber-600 animate-pulse hidden sm:block" title="Tersimpan Otomatis">
+                                    <Save size={16} />
+                                  </div>
+                                )}
                              </div>
                           </div>
                         )}

@@ -58,7 +58,15 @@ export const saveExclusions = (exclusions: ExclusionPeriod[]) => {
 
 export const getUserSettings = (): UserSettings => {
   const stored = localStorage.getItem(KEYS.SETTINGS);
-  return stored ? JSON.parse(stored) : { name: 'Ani' };
+  return stored ? JSON.parse(stored) : { name: 'Hamba Allah' };
+};
+
+export const saveUserSettings = (settings: UserSettings) => {
+  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
+};
+
+export const hasUserSettings = (): boolean => {
+  return localStorage.getItem(KEYS.SETTINGS) !== null;
 };
 
 export const isDateExcluded = (date: Date): ExclusionPeriod | undefined => {
@@ -75,9 +83,6 @@ export const calculateStreak = (today: string): number => {
   
   // Check today first. If no points today, check yesterday for streak continuity
   // But commonly streak includes today if active, or yesterday back
-  
-  // Simple logic: Go back day by day.
-  // If today has activity, start from today. Else start from yesterday.
   
   const todayLog = logs[today];
   if (todayLog && todayLog.totalPoints > 0) {

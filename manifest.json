@@ -1,0 +1,21 @@
+{
+  "short_name": "Jalur Langit",
+  "name": "Jalur Langit Tracker",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#064e3b",
+  "background_color": "#022c22",
+  "orientation": "portrait"
+}

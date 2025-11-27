@@ -2,8 +2,21 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#064e3b" />
+    <meta name="description" content="Aplikasi pencatat ibadah harian Muslim. Pantau sholat, puasa, dan sedekahmu." />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Jalur Langit">
+    
     <title>Jalur Langit Tracker</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons (Placeholder - User needs to upload actual png files) -->
+    <link rel="apple-touch-icon" href="/icon-192.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -48,6 +61,11 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #047857; 
       }
+      
+      /* Disable pull-to-refresh on mobile to feel more like an app */
+      body {
+        overscroll-behavior-y: none;
+      }
     </style>
   <script type="importmap">
 {
@@ -64,7 +82,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-800">
+  <body class="bg-slate-50 text-slate-800 select-none">
     <div id="root"></div>
   </body>
 </html>
